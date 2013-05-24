@@ -43,20 +43,19 @@
   $id = 0; 
   ?>
   
-  <div class="tablenav top">
-    <div class="alignleft actions">
-      <select name="bulk">
-        <option value="-1" selected="selected">Bulk Actions</option>
-        <option value="delete">Delete</option>
-      </select>
-      <input type="submit" name="" id="doaction" class="button action" value="Apply">
-    </div>
-    <br class="clear">
-  </div>
-  
-  
   <form action="" method="post" accept-charset="utf-8">
-    
+  
+    <div class="tablenav top">
+      <div class="alignleft actions">
+        <select name="bulk">
+          <option value="-1" selected="selected">Bulk Actions</option>
+          <option value="delete">Delete</option>
+        </select>
+        <input type="submit" name="" id="doaction" class="button action" value="Apply">
+      </div>
+      <br class="clear">
+    </div>
+
     <?php wp_nonce_field('mn_combine_update', 'mn_combine');?>
     
     <table class="form-table" id="cache-files">
@@ -122,9 +121,6 @@
       </tbody>
     </table>
 
-    
-    
-    <p class="submit"><input type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes"></p>
   </form>
 
 </div>

@@ -472,8 +472,11 @@ class MnCombine {
   private function find_cache()
   {
     $directory = new RecursiveDirectoryIterator( $this->uploads['basedir'] . '/' . $this->upload_dir );
+    
+    $filter = new DirnameFilter($directory, '/^(?!\.)/');
+    $filter = new DirnameFilter($filter, '/^(?!\.\.)/');
     // Filter css/js files . although in this case these should be all that exist
-    $filter = new FilenameFilter($directory, '/\.(?:css|js)$/');
+    $filter = new FilenameFilter($filter, '/\.(?:css|js)$/');
     $c = array();
         
     foreach(new RecursiveIteratorIterator($filter) as $file)
@@ -499,11 +502,12 @@ class MnCombine {
   private function find_assets()
   {
     $directory = new RecursiveDirectoryIterator(WP_PLUGIN_DIR);
-    // Filter out ".Trash*" folders
+    // Filter out ". and .. and this plugin" folders
     $filter = new DirnameFilter($directory, '/^(?!'.dirname( plugin_basename( __FILE__ ) ).')/');
+    $filter = new DirnameFilter($filter, '/^(?!\.)/');
+    $filter = new DirnameFilter($filter, '/^(?!\.\.)/');
     // Filter css/js files 
-    $filter = new FilenameFilter($filter, '/\.(?:css|js)$/');
-    
+    $filter = new FilenameFilter($filter, '/(?:\.css|\.js)$/');
     $assets = array();
     
     foreach(new RecursiveIteratorIterator($filter) as $file) {
@@ -528,10 +532,12 @@ class MnCombine {
   private function find_theme_assets( $assets)
   {
     $directory = new RecursiveDirectoryIterator(get_stylesheet_directory());
-    // Filter out ".Trash*" folders
+    // Filter out ". and .. and this plugin" folders
     $filter = new DirnameFilter($directory, '/^(?!'.dirname( plugin_basename( __FILE__ ) ).')/');
+    $filter = new DirnameFilter($filter, '/^(?!\.)/');
+    $filter = new DirnameFilter($filter, '/^(?!\.\.)/');
     // Filter css/js files 
-    $filter = new FilenameFilter($filter, '/\.(?:css|js)$/');
+    $filter = new FilenameFilter($filter, '/(?:\.css|\.js)$/');
     
     foreach(new RecursiveIteratorIterator($filter) as $file) {
       if( strstr($file, ".css") )
@@ -553,8 +559,10 @@ class MnCombine {
   private function find_wp_assets( $assets )
   {
     $directory = new RecursiveDirectoryIterator( ABSPATH . "wp-includes" );
+    $filter = new DirnameFilter($directory, '/^(?!\.)/');
+    $filter = new DirnameFilter($filter, '/^(?!\.\.)/');
     // Filter css/js files 
-    $filter = new FilenameFilter($directory, '/\.(?:css|js)$/');
+    $filter = new FilenameFilter($filter, '/\.(?:css|js)$/');
     
     foreach(new RecursiveIteratorIterator($filter) as $file) {
       if( strstr($file, ".css") )
