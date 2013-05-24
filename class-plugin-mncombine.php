@@ -24,7 +24,7 @@ class MnCombine {
 	 *
 	 * @var     string
 	 */
-	protected $version = '1.0.0';
+	protected $version = '1.0.2';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -291,13 +291,6 @@ class MnCombine {
 	 * @since    1.0.0
 	 */
 	public function add_plugin_admin_menu() {
-		/*
-		 * TODO:
-		 *
-		 * Change 'Page Title' to the title of your plugin admin page
-		 * Change 'Menu Text' to the text for menu item for the plugin settings page
-		 * Change 'plugin-name' to the name of your plugin
-		 */
 		$this->plugin_screen_hook_suffix = add_plugins_page(
 			__('Mn Combine', 'MnCombine'),
 			__('Asset Combine', 'MnCombine'),
@@ -703,8 +696,6 @@ class MnCombine {
     if( !is_dir( dirname( $footerFile ) ) )
       mkdir( dirname( $footerFile ), 0755, true );
     
-    
-    
     if( !is_file( $headerFile ) )
       $this->write_script_cache( $headerHash, $header, false, $localize );
     
@@ -721,6 +712,8 @@ class MnCombine {
   }
   /**
    * Hooks to print footer scripts which calls our footer scripts
+   * 
+   * @since 1.0.0
    */
   function print_footer_scripts(){}
   /**
@@ -766,8 +759,6 @@ class MnCombine {
     {
       /* We're looking for our files on the server; converting url to location */
       $src = $this->local_path( $f->src );
-      //$src = ( substr( $f->src, 0, 1) == "/" )? ABSPATH . $f->src : $f->src;
-      //$src = ( strstr( $src, get_bloginfo("wpurl") ) ) ? ABSPATH . str_replace( get_bloginfo("wpurl")."/", "", $f->src ) : $src;    
       //can we find this file?
       if( !is_file( $src ) )
         continue;
@@ -797,6 +788,10 @@ class MnCombine {
   }
   /**
    * Sends javascript to google closure to minify
+   * 
+   * @since 1.0.0
+   * 
+   * @var string $js
    */
   private function _google_closure($js)
   {    
@@ -1131,6 +1126,14 @@ class MnCombine {
       }
     return $css;
   }
+  /**
+   * Display error messages in the admin to users
+   * TODO: Log compile or include errors and display them in the admin for more usability
+   * 
+   * @since 1.0.0
+   * 
+   * @var mixed $errors
+   */
   protected function handleError( $errors )
   {
     //do something here with errors
@@ -1139,6 +1142,8 @@ class MnCombine {
   }
   /**
    * find a css url realpath
+   * 
+   * @since 1.0.0
    * 
    * @param string $address
    */
@@ -1158,6 +1163,11 @@ class MnCombine {
 }
 /**
  * Class to override php RecursiveRegexIterator for finding file extensions
+ * 
+ * @since 1.0.0
+ * 
+ * @var RecursiveIterator $it
+ * @var string $regex
  */
 abstract class FilesystemRegexFilter extends RecursiveRegexIterator {
     protected $regex;
@@ -1168,18 +1178,36 @@ abstract class FilesystemRegexFilter extends RecursiveRegexIterator {
 }
 /**
  * Filter file extensions found by regex
+ * 
+ * @since 1.0.0
+ * 
+ * @var RecursiveIterator $it
+ * @var string $regex
  */
 class FilenameFilter extends FilesystemRegexFilter {
-    // Filter files against the regex
+    /**
+     * Filter files against the regex
+     * 
+     * @since 1.0.0
+     */ 
     public function accept() {
         return ( ! $this->isFile() || preg_match($this->regex, $this->getFilename()));
     }
 }
 /**
  * Filter out folders by name in regex
+ * 
+ * @since 1.0.0
+ * 
+ * @var RecursiveIterator $it
+ * @var string $regex
  */
 class DirnameFilter extends FilesystemRegexFilter {
-    // Filter directories against the regex
+    /**
+     * Filter directories against the regex
+     * 
+     * @since 1.0.0
+     */
     public function accept() {
         return ( ! $this->isDir() || preg_match($this->regex, $this->getFilename()));
     }
