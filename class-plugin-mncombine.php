@@ -325,36 +325,37 @@ class MnCombine {
     $screen->add_help_tab( array(
         'id'  => 'mn_combine_description',
         'title' => __('Description'),
-        'content' => '<p>' . __( 'Any stylesheets or javascript files that are registered with 
-            wp_enqueue_script or wp_enqueue_style can be intercepted and compressed and combined 
-            in order to both reduce the number of requests to your server and minimize 
-            the data transfer out of your server. This increases page
-            performance by decreasing the load on your server.' ) . '</p>' . '<p>' . __( 'You 
-            can also restrict the loading of files to certain pages, posts, or post types in 
-            order to further reduce bandwidth on high traffic sites. Many plugin developers 
-            will simply enqueue their scripts which means these files can be included on 
-            every single page including those that do not require the code. Sometimes 
-            this can cause conflicts on the page and increases load time on pages.' ) . '</p>',
+        'content' => '<p>' . __( 'Finds all possible .js and .css files from a WP install available and allows 
+        you to combine and/or compress the files to reduce load time. The plugin can monitor file changes in 
+        "development" mode (by hashing file mtime) which allows the plugin to recompile the files when a 
+        file changes. Or, it can cache the files in "production" mode so that files are only recompiled 
+        if they are not found or are deleted manually from the cache folder. Additionally, this plugin will 
+        allow you to force the inclusion of javascript files into either the head or the foot of the page.' ) . '</p>' . '<p>' . 
+        __( 'There are two modes, development and production, the ability to force the files to print in the header or footer*, 
+        the use of Google Closure as a JS compiler, and finally the ability to pick and choose which files, 
+        including dependencies, should be combined.' ) . '</p>'. '<p>' . 
+        __( '*forcing head compiles can fail on JS files queued after the call to wp_head(). The plugin will, 
+        in this case, render the late queued files in the footer as originally intended.' ) . '</p>',
     ) );
     $screen->add_help_tab( array(
-        'id'  => 'mn_combine_general',
-        'title' => __('General Settings'),
-        'content' => '<p>' . '<strong>' . __('Javascript Compression Engine ') . '</strong>' . __( ': determine
-          the compression engine to use when compressing javascript files' ) . '</p>' . '<p>'
-           . '<strong>' . __('Mode ') . '</strong>' . 
-          __( ' : Prodution mode will only
-          compile the files neccessary for a page on the first request and cache those files.
-          All subsequent requests will serve those cache files until either a new dependency
-          is queued or the cache file is removed. Development mode will monitor the files
-          last change time and recompile the assets on any page request where the files data
-          has been modified.' ) . '<em><strong>' . __(' NOTE: ') . '</strong>' . __(' development mode will not monitor changes
-          made to css files that are included by an @import statement ') . '</em></p>'
-           . '<strong>' . __('Force combine ') . '</strong>' .
-          __( ' : footer will force all javascript to load in the footer while header
-          will force all queued javascript to be loaded in the footer. Forcing files queued for the header into the footer
-          can cause some scripts to fail or dependencies to be missed if javascript is written inline in. 
-          Forcing scripts into the header can cause scripts queued late to still remain in the footer.
-          Use this to get the best load times possible but beware that it can break your site when enabled and probably isn\'t necessary.' ) . '</p>',
+      'id'  => 'mn_combine_general',
+      'title' => __('General Settings'),
+      'content' => '<p>' . '<strong>' . __('Javascript Compression Engine ') . '</strong>' . __( ': determine
+        the compression engine to use when compressing javascript files' ) . '</p>' . '<p>'
+         . '<strong>' . __('Mode ') . '</strong>' . 
+        __( ' : Prodution mode will only
+        compile the files neccessary for a page on the first request and cache those files.
+        All subsequent requests will serve those cache files until either a new dependency
+        is queued or the cache file is removed. Development mode will monitor the files
+        last change time and recompile the assets on any page request where the files data
+        has been modified.' ) . '<em><strong>' . __(' NOTE: ') . '</strong>' . __(' development mode will not monitor changes
+        made to css files that are included by an @import statement ') . '</em></p>'
+         . '<strong>' . __('Force combine ') . '</strong>' .
+        __( ' : footer will force all javascript to load in the footer while header
+        will force all queued javascript to be loaded in the footer. Forcing files queued for the header into the footer
+        can cause some scripts to fail or dependencies to be missed if javascript is written inline in. 
+        Forcing scripts into the header can cause scripts queued late to still remain in the footer.
+        Use this to get the best load times possible but beware that it can break your site when enabled and probably isn\'t necessary.' ) . '</p>',
     ) );
   }
   /**

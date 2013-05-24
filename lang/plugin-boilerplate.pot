@@ -1,8 +1,8 @@
-# Copyright (C) 2013 TODO
-# This file is distributed under the same license as the TODO package.
+# Copyright (C) 2013 Michael
+# This file is distributed under the same license as the mncombine package.
 msgid ""
 msgstr ""
-"Project-Id-Version: TODO 1.0.0\n"
+"Project-Id-Version: mncombine 1.0.0\n"
 "Report-Msgid-Bugs-To: http://wordpress.org/tag/plugin-boilerplate\n"
 "POT-Creation-Date: 2013-05-10 11:23:19+00:00\n"
 "MIME-Version: 1.0\n"
