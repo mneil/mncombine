@@ -393,7 +393,6 @@ class MnCombine {
         $this->save_data();
       else
        $this->errors = new WP_Error('mn_combine', 'Sorry, your nonce did not verify.', 'error');
-      
     }
     if( !isset( $_GET['action'] ) )
 		  include_once( 'views/admin.php' );
@@ -504,6 +503,13 @@ class MnCombine {
     $directory = new RecursiveDirectoryIterator(WP_PLUGIN_DIR);
     // Filter out ". and .. and this plugin" folders
     $filter = new DirnameFilter($directory, '/^(?!'.dirname( plugin_basename( __FILE__ ) ).')/');
+    //get plugins list
+    $plugins = get_plugins();
+    //loop the plugins and check for inactive ones to exclude
+    foreach( $plugins as $plugin => $data )
+      if( !is_plugin_active($plugin) )
+        $filter = new DirnameFilter($filter, '/^(?!'.dirname($plugin).')/');
+    
     $filter = new DirnameFilter($filter, '/^(?!\.)/');
     $filter = new DirnameFilter($filter, '/^(?!\.\.)/');
     // Filter css/js files 
@@ -531,6 +537,7 @@ class MnCombine {
    */
   private function find_theme_assets( $assets)
   {
+    //recurse the active theme
     $directory = new RecursiveDirectoryIterator(get_stylesheet_directory());
     // Filter out ". and .. and this plugin" folders
     $filter = new DirnameFilter($directory, '/^(?!'.dirname( plugin_basename( __FILE__ ) ).')/');
