@@ -24,7 +24,7 @@ class MnCombine {
 	 *
 	 * @var     string
 	 */
-	protected $version = '1.0.0';
+	protected $version = '1.0.2';
 
 	/**
 	 * Unique identifier for your plugin.
@@ -170,9 +170,7 @@ class MnCombine {
 		if( is_admin() )
       return;
     
-		add_action( 'wp_print_scripts', array( $this, 'wp_print_scripts' ), 99999 );//we want to do this dead last
-		add_action( 'print_footer_scripts', array( $this, 'print_footer_scripts' ), 99999 );
-    
+		add_action( 'wp_print_scripts', array( $this, 'wp_print_scripts' ), 99999 );//we want to do this dead last 
     add_action( 'wp_print_styles', array( $this, 'wp_print_styles' ), 99999 );
 	}
 
@@ -293,13 +291,6 @@ class MnCombine {
 	 * @since    1.0.0
 	 */
 	public function add_plugin_admin_menu() {
-		/*
-		 * TODO:
-		 *
-		 * Change 'Page Title' to the title of your plugin admin page
-		 * Change 'Menu Text' to the text for menu item for the plugin settings page
-		 * Change 'plugin-name' to the name of your plugin
-		 */
 		$this->plugin_screen_hook_suffix = add_plugins_page(
 			__('Mn Combine', 'MnCombine'),
 			__('Asset Combine', 'MnCombine'),
@@ -393,7 +384,6 @@ class MnCombine {
         $this->save_data();
       else
        $this->errors = new WP_Error('mn_combine', 'Sorry, your nonce did not verify.', 'error');
-      
     }
     if( !isset( $_GET['action'] ) )
 		  include_once( 'views/admin.php' );
@@ -504,6 +494,13 @@ class MnCombine {
     $directory = new RecursiveDirectoryIterator(WP_PLUGIN_DIR);
     // Filter out ". and .. and this plugin" folders
     $filter = new DirnameFilter($directory, '/^(?!'.dirname( plugin_basename( __FILE__ ) ).')/');
+    //get plugins list
+    $plugins = get_plugins();
+    //loop the plugins and check for inactive ones to exclude
+    foreach( $plugins as $plugin => $data )
+      if( !is_plugin_active($plugin) )
+        $filter = new DirnameFilter($filter, '/^(?!'.dirname($plugin).')/');
+    
     $filter = new DirnameFilter($filter, '/^(?!\.)/');
     $filter = new DirnameFilter($filter, '/^(?!\.\.)/');
     // Filter css/js files 
@@ -531,6 +528,7 @@ class MnCombine {
    */
   private function find_theme_assets( $assets)
   {
+    //recurse the active theme
     $directory = new RecursiveDirectoryIterator(get_stylesheet_directory());
     // Filter out ". and .. and this plugin" folders
     $filter = new DirnameFilter($directory, '/^(?!'.dirname( plugin_basename( __FILE__ ) ).')/');
@@ -628,8 +626,8 @@ class MnCombine {
         }
       //file isn't in the combine list
       if( !$match )
-        continue;      
-      
+        continue;    
+            
       //store the handle and full file path for lookup later on compression
       $this->combined[$handle] = $js;
       /* used to pass up externals but now any file that gets included must be on the server to get found */
@@ -661,15 +659,19 @@ class MnCombine {
         $header[$handle] = (object)array( 'src' => $src );
       }
       
-      //remove this file from wp's registered script list and dequeue it
-      unset( $wp_scripts->registered[$handle] );
+      //remove this file from wp's registered script list and dequeue it next
+      foreach( $wp_scripts->to_do as $key => $h )
+        if( $h === $handle )
+          unset($wp_scripts->to_do[$key]);//we're explicitly unsetting this because we'll use this list below to remove dependencies
+      
+      wp_deregister_script( $handle );
       wp_dequeue_script( $handle );
     }
-    //loop the queue'd scripts again and makre sure all the files are out of the queue for sure
-    //not sure why but these sometimes get stuck in the queue still until this point...
-    foreach ($wp_scripts->queue as $key => $handle)
-      if ( isset( $header[$handle] ) || isset( $footer[$handle] ) )
-        unset( $wp_scripts->queue[$key] );
+    //remove dependencies that were compiled
+    foreach( $wp_scripts->to_do as $handle )
+      foreach( $wp_scripts->registered[$handle]->deps as $key => $dep )//loop the remaining to_do dependencies
+        if( !in_array( $dep, $wp_scripts->to_do ) )//if the dependency isn't in to_do still then it gets compiled with the rest
+          unset( $wp_scripts->registered[$handle]->deps[$key] );//remove the dependency, it's already queued
     
     if( "header" === $force_combine )
     {
@@ -694,6 +696,12 @@ class MnCombine {
     if( !is_dir( dirname( $footerFile ) ) )
       mkdir( dirname( $footerFile ), 0755, true );
     
+    if( !is_file( $headerFile ) )
+      $this->write_script_cache( $headerHash, $header, false, $localize );
+    
+    else 
+      $this->enqueue_packed_script( $headerHash, false, $localize );
+    
     /* If the files don't exist them build them*/
     if( !is_file( $footerFile ) )
       $this->write_script_cache( $footerHash, $footer, true, $localize );
@@ -701,15 +709,11 @@ class MnCombine {
     else 
       $this->enqueue_packed_script( $footerHash, true, $localize );
     
-    if( !is_file( $headerFile ) )
-      $this->write_script_cache( $headerHash, $header, false, $localize );
-    
-    else 
-      $this->enqueue_packed_script( $headerHash, false, $localize );
-    
   }
   /**
    * Hooks to print footer scripts which calls our footer scripts
+   * 
+   * @since 1.0.0
    */
   function print_footer_scripts(){}
   /**
@@ -755,8 +759,6 @@ class MnCombine {
     {
       /* We're looking for our files on the server; converting url to location */
       $src = $this->local_path( $f->src );
-      //$src = ( substr( $f->src, 0, 1) == "/" )? ABSPATH . $f->src : $f->src;
-      //$src = ( strstr( $src, get_bloginfo("wpurl") ) ) ? ABSPATH . str_replace( get_bloginfo("wpurl")."/", "", $f->src ) : $src;    
       //can we find this file?
       if( !is_file( $src ) )
         continue;
@@ -786,6 +788,10 @@ class MnCombine {
   }
   /**
    * Sends javascript to google closure to minify
+   * 
+   * @since 1.0.0
+   * 
+   * @var string $js
    */
   private function _google_closure($js)
   {    
@@ -867,6 +873,7 @@ class MnCombine {
       foreach( $localize as $s )
         $extra .= "$s\n";
     
+    //prints wp_localise_script data in the header
     if( !empty( $extra ) && ( "footer" === get_option( 'mn_force_combine', $this->force_combine ) || $footer === false ) )
     {
       ?><script type="text/javascript" charset="utf-8"><?php echo $extra; ?></script><?php
@@ -876,7 +883,6 @@ class MnCombine {
     $path = $this->uploads['baseurl'] . '/' . $this->upload_dir . '/' . $file . ".js";
     
     wp_enqueue_script( $this->handle, $path, null, 0, $footer );
-    
     /**
      * If we're unqueueing the header scripts then we need to 
      * print them out immediately
@@ -887,8 +893,15 @@ class MnCombine {
       if ( ! is_a( $wp_scripts, 'WP_Scripts' ) )
         $wp_scripts = new WP_Scripts();
       
+      $wp_scripts->all_deps($wp_scripts->queue); 
+      $wp_scripts->to_do = array_values($wp_scripts->to_do);
+      $wp_scripts->to_do = array_flip( $wp_scripts->to_do );
+      unset($wp_scripts->to_do[$this->handle]);
+      $wp_scripts->to_do = array_flip( $wp_scripts->to_do );
+      array_unshift($wp_scripts->to_do, $this->handle);
       $wp_scripts->do_items(false, 0);
     }
+    
   }
   /**
    * Action hook for wp_print_styles
@@ -975,19 +988,13 @@ class MnCombine {
     {
       $f = $info;
       /* We're looking for our files on the server; converting url to location */
-      //$src = ( substr( $f->src, 0, 1) == "/" ) ? ABSPATH . substr( $f->src, 1 ) : $f->src;
-      //$src = ( strstr( $src, get_bloginfo("wpurl") ) ) ? ABSPATH . str_replace( get_bloginfo("wpurl")."/", "", $f->src ) : $src;
       $src = $this->local_path( $f->src );
       
       if( !is_file( $src ) )
         continue;
             
       $content = file_get_contents( $src );
-      //if( NO_COMPRESS_CACHED_SCRIPTS )
-      //{
-        //echo "SRC: $src<br/>";
       $content = $this->compress_css($content, $path, $src);
-      //}
       file_put_contents( $path, "/*$key*/\n$content\n\n", FILE_APPEND | LOCK_EX );
     }
     //get the path of the newly created file
@@ -1119,6 +1126,14 @@ class MnCombine {
       }
     return $css;
   }
+  /**
+   * Display error messages in the admin to users
+   * TODO: Log compile or include errors and display them in the admin for more usability
+   * 
+   * @since 1.0.0
+   * 
+   * @var mixed $errors
+   */
   protected function handleError( $errors )
   {
     //do something here with errors
@@ -1127,6 +1142,8 @@ class MnCombine {
   }
   /**
    * find a css url realpath
+   * 
+   * @since 1.0.0
    * 
    * @param string $address
    */
@@ -1146,6 +1163,11 @@ class MnCombine {
 }
 /**
  * Class to override php RecursiveRegexIterator for finding file extensions
+ * 
+ * @since 1.0.0
+ * 
+ * @var RecursiveIterator $it
+ * @var string $regex
  */
 abstract class FilesystemRegexFilter extends RecursiveRegexIterator {
     protected $regex;
@@ -1156,18 +1178,36 @@ abstract class FilesystemRegexFilter extends RecursiveRegexIterator {
 }
 /**
  * Filter file extensions found by regex
+ * 
+ * @since 1.0.0
+ * 
+ * @var RecursiveIterator $it
+ * @var string $regex
  */
 class FilenameFilter extends FilesystemRegexFilter {
-    // Filter files against the regex
+    /**
+     * Filter files against the regex
+     * 
+     * @since 1.0.0
+     */ 
     public function accept() {
         return ( ! $this->isFile() || preg_match($this->regex, $this->getFilename()));
     }
 }
 /**
  * Filter out folders by name in regex
+ * 
+ * @since 1.0.0
+ * 
+ * @var RecursiveIterator $it
+ * @var string $regex
  */
 class DirnameFilter extends FilesystemRegexFilter {
-    // Filter directories against the regex
+    /**
+     * Filter directories against the regex
+     * 
+     * @since 1.0.0
+     */
     public function accept() {
         return ( ! $this->isDir() || preg_match($this->regex, $this->getFilename()));
     }
