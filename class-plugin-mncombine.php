@@ -129,6 +129,20 @@ class MnCombine {
   protected $force_combine = 'none';
   
   /**
+   * Stores the default css_compression option value
+   * 
+   * @since 1.0.3
+   */
+  protected $css_compression = '0';
+  
+  /**
+   * Stores the default compress_js_single option value
+   * 
+   * @since 1.0.3
+   */
+  protected $compress_js_single = '0';
+  
+  /**
    * Stores the default parsing structure for stored data
    * 
    * @since 1.0.0
@@ -333,6 +347,10 @@ class MnCombine {
       'title' => __('General Settings'),
       'content' => '<p>' . '<strong>' . __('Javascript Compression Engine ') . '</strong>' . __( ': determine
         the compression engine to use when compressing javascript files' ) . '</p>' . '<p>'
+         . '<strong>' . __('Compress CSS ') . '</strong>' . 
+         __( ' :  determines whether or not to compress the compiled css. This is done using a regex which, in 
+         most cases, does a great job compressing css by removing whitespaces and newlines. This can, however, cause
+         errors in some css. If it does, please contact us and let us know what css caused the error.') . '</p>'
          . '<strong>' . __('Mode ') . '</strong>' . 
         __( ' : Prodution mode will only
         compile the files neccessary for a page on the first request and cache those files.
@@ -432,6 +450,8 @@ class MnCombine {
       update_option( 'mn_compression_engine', $_POST['compression_engine'] );
       update_option( 'mn_compile_mode', $_POST['compile_mode'] );
       update_option( 'mn_force_combine', $_POST['force_combine'] );
+      update_option( 'mn_css_compression', $_POST['css_compression'] );
+      //update_option( 'mn_compress_js_single', $_POST['mn_compress_js_single'] );
     }
     elseif( "js" === $_GET['action'] )
     {
@@ -747,6 +767,7 @@ class MnCombine {
     $path = $this->uploads['basedir'] . '/' . $this->upload_dir . '/' . $file . ".js";
     $assets = get_option( 'mn_comine_assets', $this->default );//get the list of files we can compress/combine
     $compression = get_option( 'mn_compression_engine', $this->compression_engine );//get the list of files we can compress/combine
+    //$all_js = array('compressed' => array(), 'uncompressed' => array());
     //$implode just stores a nice comma separated list of files that were combined in this file
     $implode = array_keys( (array)$data );
     $implode = implode( ", ", $implode );
@@ -806,7 +827,7 @@ class MnCombine {
     $output = json_decode($output);
     
     //errors?
-    if( null !== $output->errors || null !== $output->serverErrors || $error = curl_error($ch) )
+    if( isset($output->errors) || isset($output->serverErrors) || $error = curl_error($ch) )
     {
       $errors = array();
       
@@ -913,7 +934,7 @@ class MnCombine {
     global $wp_styles;
     
     $compile_mode = get_option( 'mn_compile_mode', $this->compile_mode );
-    $mtimes = array('header' => array(), 'footer' => array());
+    $mtimes = array();
     
     /* Make sure we have something to do here */
     if( count( $wp_styles->registered ) == 0 )
@@ -957,7 +978,7 @@ class MnCombine {
     if( !is_dir( dirname( $file ) ) )
       mkdir( dirname( $file ), 0755, true );
   
-    if( !is_file( $file ) || !NO_CACHE )
+    if( !is_file( $file ) )
       $this->write_style_cache( $hash, $styles );
     
     else 
@@ -1047,10 +1068,12 @@ class MnCombine {
     //find any imports
     $css = $this->import_css($css, $path, $src);
     
-    // remove comments, tabs, spaces, newlines, etc.
-    $css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
-    $css = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $css);
-
+    // remove comments, tabs, spaces, newlines, etc. if css_compress == 1
+    if( '1' == get_option( 'mn_css_compression', $this->css_compression ) )
+    {
+      $css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
+      $css = str_replace(array("\r\n", "\r", "\n", "\t", '  ', '    ', '    '), '', $css);
+    }
     return $css;
   }
   /**

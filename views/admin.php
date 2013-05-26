@@ -44,6 +44,8 @@
   $compression = get_option( 'mn_compression_engine', $this->compression_engine );
   $compile_mode = get_option( 'mn_compile_mode', $this->compile_mode );
   $force_combine = get_option( 'mn_force_combine', $this->force_combine );
+  $css_compression = get_option( 'mn_css_compression', $this->css_compression );
+  //$compress_js_single = get_option( 'mn_compress_js_single', $this->compress_js_single );
   $id = 0;
   ?>
   
@@ -73,6 +75,50 @@
               <label for="jsmin">
                 <input name="compression_engine" type="radio" id="jsmin" value="js_min" <?php if( $compression == "js_min" )echo 'checked="checked"'; ?>/>
                 JSMin <small>Not recommended but it still works</small> <a href="https://github.com/rgrove/jsmin-php/" target="_blank">learn more</a>
+              </label>
+              <br/>
+              
+            </fieldset>
+          </td>
+        </tr>
+        <?php /* not ready for primetime. This will fail miserably with dependency order ?>
+        <tr valign="top">
+          <th scope="row">Compress Javascript Individually</th>
+          <td>
+            <fieldset>
+              <legend class="screen-reader-text">
+                <span>choose whether to combine javascript then compress or compress then combine</span>
+              </legend>
+              <label for="compress_js_single_0">
+                <input name="compress_js_single" type="radio" id="compress_js_single_0" value="0" <?php if( $compress_js_single == "0" )echo 'checked="checked"'; ?>/>
+                No <small>(combine files then compress all js at once)</small>
+              </label>
+              <br/>
+              <label for="compress_js_single_1">
+                <input name="compress_js_single" type="radio" id="compress_js_single_1" value="1" <?php if( $compress_js_single == "1" )echo 'checked="checked"'; ?>/>
+                Yes <small>(compress each js file separately then combine)</small>
+              </label>
+              <br/>
+              
+            </fieldset>
+          </td>
+        </tr>
+        <?php */ ?>
+        <tr valign="top">
+          <th scope="row">Compress CSS</th>
+          <td>
+            <fieldset>
+              <legend class="screen-reader-text">
+                <span>choose whether or not to compress the css</span>
+              </legend>
+              <label for="css_compress_0">
+                <input name="css_compression" type="radio" id="css_compress_0" value="0" <?php if( $css_compression == "0" )echo 'checked="checked"'; ?>/>
+                No
+              </label>
+              <br/>
+              <label for="css_compress_1">
+                <input name="css_compression" type="radio" id="css_compress_1" value="1" <?php if( $css_compression == "1" )echo 'checked="checked"'; ?>/>
+                Yes
               </label>
               <br/>
               
